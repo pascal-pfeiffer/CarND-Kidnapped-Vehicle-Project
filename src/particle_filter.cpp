@@ -142,7 +142,69 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
    *   and the following is a good resource for the actual equation to implement
    *   (look at equation 3.33) http://planning.cs.uiuc.edu/node99.html
    */
+  
+  // predict measurements to all the map landmarks within sensor range for each particle
+  // loop over all particles
+  for (unsigned int i = 0; i < particles.size(); ++i) {
+    vector<LandmarkObs> predicted;  // create "landmark" vector with all the predicted measurements for this particle
+    // look for landmarks in the map within sensor range
+    for (unsigned int j = 0; j < map_landmarks.landmark_list.size(); ++j) {
+      double current_distance = sqrt(pow(particles[i].x - map_landmarks.landmark_list[j].x_f, 2.0) + pow(particles[i].y - map_landmarks.landmark_list[j].y_f, 2.0));
+      if (current_distance <= sensor_range) {
+        LandmarkObs candidate;
+        candidate.id = map_landmarks.landmark_list[j].id_i;
+        candidate.x = map_landmarks.landmark_list[j].x_f;
+        candidate.y = map_landmarks.landmark_list[j].y_f;
+        predicted.push_back(candidate);
+      }
+    }
+    // std::cout << "INFO: number of landmarks in range for this particle: " << predicted.size() << std::endl;
+    
+    // our observations are still in the vehicle frame
+    // we need them in the map frame using the current pose of the particle
+    vector<LandmarkObs> observations_map_frame;
+    for (unsigned int j = 0; j < observations.size(); ++j) {
+      LandmarkObs observation_map_frame;
+      observation_map_frame.id = observations[j].id;
+      observation_map_frame.x = particles[i].x + (cos(particles[i].theta) * observations[j].x) - (sin(particles[i].theta) * observations[j].y);
+      observation_map_frame.y = particles[i].y + (sin(particles[i].theta) * observations[j].x) + (cos(particles[i].theta) * observations[j].y);
+      observations_map_frame.push_back(observation_map_frame);
+    }
+    
+    // now we have a predicted landmark vector and a observed landmark vector
+    // we call dataAssociation here with the transformed observations
+    dataAssociation(predicted, observations_map_frame);
+    
+    // each observation now has the ID of the nearest predicted landmark
+    // now, we will need to calculate the multivariate gaussian probabilities
+    // for each observed landmark and multiply? them all together (weight of particle)
+    // weight init with 1
+    particles[i].weight = 1.0;
+    for (unsigned int j = 0; j < observations_map_frame.size(); ++j) {
+      // we need to find the corresponding predicted values
+      unsigned int k = 0;
+      bool found_match = false;
+      // run the loop as long as we didn't find an id match or the vector is done
+      while (not found_match && k < predicted.size()) {
+        if (observations_map_frame[j].id == predicted[k].id) {
+          //found match
+          // std::cout << "INFO: found match" << std::endl;
+          found_match = true;
+          double scaling_factor = 1 / (2 * M_PI * std_landmark[0] * std_landmark[1]);
+          double a = (pow(observations_map_frame[j].x - predicted[k].x, 2.0)) / (2 * (std_landmark[0] * std_landmark[0]));
+          double b = (pow(observations_map_frame[j].y - predicted[k].y, 2.0)) / (2 * (std_landmark[1] * std_landmark[1]));
+          double proba = scaling_factor * exp(-(a + b));
+          // std::cout << "distance x: " << observations_map_frame[j].x - predicted[k].x << std::endl;
+          // std::cout << "distance y: " << observations_map_frame[j].y - predicted[k].y << std::endl;
+          // std::cout << "proba: " << proba << std::endl;
+          particles[i].weight *= proba;
+        }
+        k++;
+      }
 
+    }
+    
+  }
 }
 
 void ParticleFilter::resample() {

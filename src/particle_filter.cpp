@@ -223,34 +223,36 @@ void ParticleFilter::resample() {
    */
   
   // particles have unnormalized weights
-  // we will normalize them
+  // get max_weight
   double max_weight = 0;
   for (unsigned int j = 0; j < particles.size(); ++j) {
     if (particles[j].weight > max_weight) {
       max_weight = particles[j].weight;
     }
   }
-  for (unsigned int j = 0; j < particles.size(); ++j) {
-    particles[j].weight /= max_weight;
-  }
+  // we will normalize them -> Not needed if using the wheel below
+  // for (unsigned int j = 0; j < particles.size(); ++j) {
+  //   particles[j].weight /= max_weight;
+  // }
   
   // now we can use the resampling wheel from the lectures
-  //p3 = []
-  //index = int(random.random() * N)
+  vector<Particle> resampled_particles;
   // std::default_random_engine gen;  // now in header file
-  std::uniform_int_distribution<int> random_distribution(2, particles.size());
-  std::cout << "INFO: random index: " << random_distribution(gen) << ", number of particles: " << particles.size() << std::endl;
-  //beta = 0.0
-  //mw = max(w)
-
-  //for i in range(N):
-  //    beta += random.random() * 2.0 * mw
-  //    while beta > w[index]:
-  //        beta -= w[index]
-  //        index = (index + 1) % N
-  //    p3.append(p[index])
-
-  //p = p3
+  std::uniform_int_distribution<int> random_distribution(0, particles.size());
+  std::uniform_real_distribution<double> random_real_distribution(0, 1);
+  // std::cout << "INFO: random index: " << random_distribution(gen) << ", number of particles: " << particles.size() << std::endl;
+  double beta = 0.0;
+  int index = random_distribution(gen);
+  
+  for (unsigned int j = 0; j < particles.size(); ++j) {
+    beta += random_real_distribution(gen) * 2.0 * max_weight;
+    while (beta > particles[index].weight) {
+      beta -= particles[index].weight;
+      index = (index + 1) % particles.size();
+    }
+    resampled_particles.push_back(particles[index]);
+  }
+  particles = resampled_particles;
   
 }
 

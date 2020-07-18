@@ -33,7 +33,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
   num_particles = 10;  // Sets the number of particles
   
   // create gaussians around the initialization parameters with given deviations
-  std::default_random_engine gen;
+  // std::default_random_engine gen;  // now in header file
   std::normal_distribution<double> dist_x(x, std[0]);
   std::normal_distribution<double> dist_y(y, std[1]);
   std::normal_distribution<double> dist_theta(theta, std[2]);
@@ -77,7 +77,7 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
   
   // add gaussian noise to these new values
   for (unsigned int i = 0; i < particles.size(); ++i) {
-    std::default_random_engine gen;
+    // std::default_random_engine gen;  // now in header file
     std::normal_distribution<double> dist_x(particles[i].x, std_pos[0]);
     std::normal_distribution<double> dist_y(particles[i].y, std_pos[1]);
     std::normal_distribution<double> dist_theta(particles[i].theta, std_pos[2]);
@@ -214,7 +214,37 @@ void ParticleFilter::resample() {
    * NOTE: You may find std::discrete_distribution helpful here.
    *   http://en.cppreference.com/w/cpp/numeric/random/discrete_distribution
    */
+  
+  // particles have unnormalized weights
+  // we will normalize them
+  double max_weight = 0;
+  for (unsigned int j = 0; j < particles.size(); ++j) {
+    if (particles[j].weight > max_weight) {
+      max_weight = particles[j].weight;
+    }
+  }
+  for (unsigned int j = 0; j < particles.size(); ++j) {
+    particles[j].weight /= max_weight;
+  }
+  
+  // now we can use the resampling wheel from the lectures
+  //p3 = []
+  //index = int(random.random() * N)
+  // std::default_random_engine gen;  // now in header file
+  std::uniform_int_distribution<int> random_distribution(2, particles.size());
+  std::cout << "INFO: random index: " << random_distribution(gen) << ", number of particles: " << particles.size() << std::endl;
+  //beta = 0.0
+  //mw = max(w)
 
+  //for i in range(N):
+  //    beta += random.random() * 2.0 * mw
+  //    while beta > w[index]:
+  //        beta -= w[index]
+  //        index = (index + 1) % N
+  //    p3.append(p[index])
+
+  //p = p3
+  
 }
 
 void ParticleFilter::SetAssociations(Particle& particle, 

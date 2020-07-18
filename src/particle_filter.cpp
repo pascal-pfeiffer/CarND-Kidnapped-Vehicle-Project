@@ -197,9 +197,16 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
           // std::cout << "distance x: " << observations_map_frame[j].x - predicted[k].x << std::endl;
           // std::cout << "distance y: " << observations_map_frame[j].y - predicted[k].y << std::endl;
           // std::cout << "proba: " << proba << std::endl;
+          if (proba < 1.0e-15) {
+            proba = 1.0e-15;
+          }
+          std::cout << "proba: " << proba << std::endl;
           particles[i].weight *= proba;
         }
         k++;
+      }
+      if (found_match == false) {
+        std::cout << "ERROR: found no match" << std::endl;
       }
 
     }

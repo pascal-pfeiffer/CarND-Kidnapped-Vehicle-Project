@@ -88,14 +88,38 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
 void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted, 
                                      vector<LandmarkObs>& observations) {
   /**
-   * TODO: Find the predicted measurement that is closest to each 
+   * Find the predicted measurement that is closest to each 
    *   observed measurement and assign the observed measurement to this 
    *   particular landmark.
    * NOTE: this method will NOT be called by the grading code. But you will 
    *   probably find it useful to implement this method and use it as a helper 
    *   during the updateWeights phase.
    */
-
+  //struct LandmarkObs {
+  //int id;     // Id of matching landmark in the map.
+  //double x;   // Local (vehicle coords) x position of landmark observation [m]
+  //double y;   // Local (vehicle coords) y position of landmark observation [m]
+  //};
+  
+  // loop over all observed landmarks
+  for (unsigned int i = 0; i < observations.size(); ++i) {
+    // initialize max_distance with a large value
+    double max_distance = 10000;
+    
+    // now for each observed landmark check the predictions for each particle
+    for (unsigned int j = 0; j < predicted.size(); ++j) {
+      // and calculate the euclidean distance
+      double current_distance = sqrt(pow(observations[i].x - predicted[j].x, 2.0) + pow(observations[i].y - predicted[j].y, 2.0));
+      
+      // if the euclidead distance is smaller than the current smallest
+      // save the best particle id to the observation id and 
+      // set the max_distance to this distance
+      if (current_distance < max_distance) {
+        observations[i].id = predicted[j].id;
+        max_distance = current_distance;
+      }
+    }
+  }
 }
 
 void ParticleFilter::updateWeights(double sensor_range, double std_landmark[], 

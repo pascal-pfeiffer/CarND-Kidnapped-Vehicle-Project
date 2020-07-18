@@ -70,9 +70,16 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
   // std::cout << "velocity: " << velocity << std::endl;
   // std::cout << "yaw_rate: " << yaw_rate << std::endl;
   for (unsigned int i = 0; i < particles.size(); ++i) {
-    particles[i].x += (velocity / yaw_rate) * (sin(particles[i].theta + (yaw_rate * delta_t)) - sin(particles[i].theta));
-    particles[i].y += (velocity / yaw_rate) * (cos(particles[i].theta) - cos(particles[i].theta + (yaw_rate * delta_t)));
-    particles[i].theta += yaw_rate * delta_t;
+    if (yaw_rate == 0) {
+      particles[i].x += velocity * delta_t * cos(particles[i].theta);
+      particles[i].x += velocity * delta_t * sin(particles[i].theta);
+      // particles[i].theta doesn't change
+    }
+    else {
+      particles[i].x += (velocity / yaw_rate) * (sin(particles[i].theta + (yaw_rate * delta_t)) - sin(particles[i].theta));
+      particles[i].y += (velocity / yaw_rate) * (cos(particles[i].theta) - cos(particles[i].theta + (yaw_rate * delta_t)));
+      particles[i].theta += yaw_rate * delta_t;
+    }
   }
   
   // add gaussian noise to these new values
@@ -150,6 +157,9 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
     // look for landmarks in the map within sensor range
     for (unsigned int j = 0; j < map_landmarks.landmark_list.size(); ++j) {
       double current_distance = sqrt(pow(particles[i].x - map_landmarks.landmark_list[j].x_f, 2.0) + pow(particles[i].y - map_landmarks.landmark_list[j].y_f, 2.0));
+      // std::cout << "INFO: current landmark x: " << map_landmarks.landmark_list[j].x_f << std::endl;
+      // std::cout << "INFO: current particle x: " << particles[i].x << std::endl;
+      // std::cout << "INFO: current landmark distance: " << current_distance << std::endl;
       if (current_distance <= sensor_range) {
         LandmarkObs candidate;
         candidate.id = map_landmarks.landmark_list[j].id_i;
@@ -200,7 +210,7 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
           if (proba < 1.0e-15) {
             proba = 1.0e-15;
           }
-          std::cout << "proba: " << proba << std::endl;
+          // std::cout << "proba: " << proba << std::endl;
           particles[i].weight *= proba;
         }
         k++;

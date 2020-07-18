@@ -30,7 +30,7 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
    * NOTE: Consult particle_filter.h for more information about this method 
    *   (and others in this file).
    */
-  num_particles = 100;  // Sets the number of particles
+  num_particles = 10;  // Sets the number of particles
   
   // create gaussians around the initialization parameters with given deviations
   std::default_random_engine gen;
@@ -46,12 +46,13 @@ void ParticleFilter::init(double x, double y, double theta, double std[]) {
     particle.x = dist_x(gen);
     particle.y = dist_y(gen);
     particle.theta = dist_theta(gen);
-    particle.weight = 1;
+    particle.weight = 1.0;
     particles.push_back(particle);
   }
   
   // set is_initialized to true, so this routine will not be called again
   is_initialized = true;
+  std::cout << "INFO: particle filter initialized" << std::endl;
   
 }
 
@@ -64,8 +65,10 @@ void ParticleFilter::prediction(double delta_t, double std_pos[],
    *  http://en.cppreference.com/w/cpp/numeric/random/normal_distribution
    *  http://www.cplusplus.com/reference/random/default_random_engine/
    */
-
   // prediction step for each particle
+  // std::cout << "INFO: prediction step" << std::endl;
+  // std::cout << "velocity: " << velocity << std::endl;
+  // std::cout << "yaw_rate: " << yaw_rate << std::endl;
   for (unsigned int i = 0; i < particles.size(); ++i) {
     particles[i].x += (velocity / yaw_rate) * (sin(particles[i].theta + (yaw_rate * delta_t)) - sin(particles[i].theta));
     particles[i].y += (velocity / yaw_rate) * (cos(particles[i].theta) - cos(particles[i].theta + (yaw_rate * delta_t)));
@@ -119,6 +122,7 @@ void ParticleFilter::dataAssociation(vector<LandmarkObs> predicted,
         max_distance = current_distance;
       }
     }
+    // std::cout << "max_distance: " << max_distance << std::endl;
   }
 }
 
